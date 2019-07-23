@@ -1,5 +1,5 @@
-#+TITLE:    Alchemist's Emacs Configuration
-#+AUTHOR:   Lucas Vieira
+#+TITLE:    Emacs Configuration
+#+AUTHOR:   Trumae da Ilha 
 #+BABEL:    :cache yes
 #+PROPERTY: header-args :tangle yes
 #+STARTUP:  overview
@@ -497,7 +497,15 @@ light that follows your cursor around so you don't lose it!
 #+begin_src emacs-lisp
    (use-package beacon)
    (beacon-mode 1)
-   (setq beacon-blink-when-point-moves t)
+#+end_src
+
+** Org-Trello
+
+Org-trello is an emacs minor mode to extend org-mode with Trello abilities.
+
+
+#+begin_src emacs-lisp
+   (use-package org-trello)
 #+end_src
 
 
