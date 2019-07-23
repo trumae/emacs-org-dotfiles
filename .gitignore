@@ -1,2 +1,8 @@
 sensitive-real/
-
+sensitive/
+init.lisp
+init.el
+*.elc
+elpa/
+network-security.data
+transient/

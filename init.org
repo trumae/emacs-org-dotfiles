@@ -60,7 +60,7 @@ Prepare packages.
 ;;;; Packaging
 
 (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
-			 ("marmalade" . "https://marmalade-repo.org/packages/")
+			 ;;("marmalade" . "https://marmalade-repo.org/packages/")
 			 ;;("melpa-stable" . "https://stable.melpa.org/packages/")
 			 ("melpa" . "https://melpa.org/packages/")
 			 ("org" . "https://orgmode.org/elpa/")))
@@ -234,308 +234,6 @@ Flycheck and Semantic.
   (semantic-mode 1)
 #+end_src
 
-** Org
-
-Org mode already comes with Emacs, but it is important that we make
-sure we have the latest version installed.
-
-#+begin_src emacs-lisp
-  (use-package org :ensure org-plus-contrib)
-#+end_src
-
-*** Agenda
-
-Prepare Portuguese-BR translations for some things, plus some custom
-commands.
-
-#+begin_src emacs-lisp
-  (require 'org-agenda)
-  (setq org-agenda-include-diary t
-	calendar-week-start-day 0
-	calendar-day-name-array ["Domingo" "Segunda" "Terça" "Quarta"
-				 "Quinta" "Sexta" "Sábado"]
-	calendar-month-name-array ["Janeiro" "Fevereiro" "Março" "Abril"
-				   "Maio" "Junho" "Julho" "Agosto"
-				   "Setembro" "Outubro" "Novembro" "Dezembro"])
-
-
-  (add-to-list 'org-agenda-custom-commands
-	       '("Y" "Agenda anual de aniversários e feriados" agenda "Visão Anual"
-		 ((org-agenda-span 365)
-		  (org-agenda-filter-by-category 'Aniversário)
-		  (org-agenda-time-grid nil))))
-  (add-to-list 'org-agenda-custom-commands
-	       '("1" "Agenda mensal" agenda "Visão Mensal"
-		 ((org-agenda-span 31)
-		  (org-agenda-time-grid nil))))
-  (add-to-list 'org-agenda-custom-commands
-	       '("7" "Agenda dos próximos sete dias" agenda "Visão de Sete Dias"
-		 ((org-agenda-span 7)
-		  (org-agenda-time-grid nil))))
-#+end_src
-
-There are also some Brazillian holidays we can use.
-
-#+begin_src emacs-lisp
-  (load (expand-file-name (concat user-emacs-directory "elisp/brazil-holidays.el")))
-  (setq calendar-holidays holiday-brazil-all)
-#+end_src
-
-As for my agenda itself, it is managed through the variable org-agenda-files, which
-is defined in a sensitive file.
-
-#+begin_src emacs-lisp
-  (load (expand-file-name (concat user-emacs-directory "sensitive/agenda.el")))
-#+end_src
-
-*** Appearance
-
-Let's make sure our Org mode indents and wraps around the 80th column
-by using Visual Line Mode. Oh, and we also enable cute bullets.
-
-#+begin_src emacs-lisp
-  (add-hook 'org-mode-hook #'toggle-word-wrap)
-  (add-hook 'org-mode-hook #'org-indent-mode)
-  (add-hook 'org-mode-hook #'turn-on-visual-line-mode)
-
-  (use-package org-bullets
-    :config (add-hook 'org-mode-hook #'org-bullets-mode))
-#+end_src
-
-Let's enforce the 80-column rule with an indicator.
-
-#+begin_src emacs-lisp
-  (use-package fill-column-indicator
-    :config (progn
-	      (add-hook 'org-mode-hook
-			(lambda ()
-			  (setq fci-rule-width 1)
-			  (setq fci-rule-color "darkblue")))
-	      (add-hook 'org-mode-hook 'turn-on-auto-fill)))
-#+end_src
-
-Other nice features are: hiding emphasis markers, prevent editing
-source blocks indentation, make tab acts natively, fontify, ensure
-org-babel checks before evaluation, support shift select.
-
-#+begin_src emacs-lisp
-  (setq org-hide-emphasis-markers        t
-	org-edit-src-content-indentation 0
-	org-src-tab-acts-natively        t
-	org-src-fontify-natively         t
-	org-src-preserve-indentation     t
-	org-confirm-babel-evaluate       t
-	org-support-shift-select         'always)
-#+end_src
-
-*** Alert
-
-Org-alert uses libnotify to create notifications for the calendar.
-
-#+begin_src emacs-lisp
-  (use-package org-alert
-    :config (progn
-	      (setq alert-default-style          'libnotify
-		    org-alert-notification-title "*org-mode*"
-		    org-alert-interval           21600)
-	      (org-alert-enable)))
-#+end_src
-
-*** Calfw
-
-Calfw is my default calendar tool. I bind it to F6 key.
-
-#+begin_src emacs-lisp
-  (use-package calfw)
-  (use-package calfw-org
-    :requires calfw
-    :config (progn
-	      (setq cfw:org-overwrite-default-keybinding t)
-	      (global-set-key (kbd "<f6>")
-			      (lambda ()
-				(interactive)
-				(cfw:open-org-calendar)))))
-#+end_src
-
-*** Journal
-
-Org journal is useful for keeping up notes on a journal.
-My journal files are kept in a sensitive file.
-
-#+begin_src emacs-lisp
-  (load (expand-file-name (concat user-emacs-directory "sensitive/journal.el")))
-  (use-package org-journal
-    :init
-    (defun org-journal-load-files ()
-      (interactive)
-      (when (not org-journal-loaded)
-	(setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]$")
-	(add-to-list 'org-agenda-files org-journal-dir)
-	(setq org-journal-loaded t)))
-    :config (setq org-journal-loaded nil))
-
-#+end_src
-
-Anniversaries can be seen by including my diary.
-
-#+begin_src emacs-lisp
-  (setq org-agenda-include-diary t)
-#+end_src
-
-*** Trello
-
-Trello support. Not much needs to be said.
-
-#+begin_src emacs-lisp
-  (use-package org-trello)
-#+end_src
-
-*** Templates
-
-Unfortunately, newer versions of Org do not include template
-snippets. Let's fix this.
-
-#+begin_src emacs-lisp
-  (define-key org-mode-map (kbd "C-c C-x t") #'org-insert-structure-template)
-
-  (setq org-structure-template-alist
-	'(("n" . "notes")
-	  ("a" . "export ascii")
-	  ("c" . "center")
-	  ("C" . "comment")
-	  ("e" . "example")
-	  ("E" . "export")
-	  ("h" . "export html")
-	  ("l" . "export latex")
-	  ("q" . "quote")
-	  ("s" . "src")
-	  ("v" . "verse")))
-#+end_src
-
-*** Exports
-
-Let's begin by setting up a few things for Babel.
-
-#+begin_src emacs-lisp
-  (setq org-export-allow-bind-keywords t)
-
-  (use-package ob-go)
-  (org-babel-do-load-languages 'org-babel-load-languages
-			       '((lisp  . t)
-				 (go    . t)
-				 (shell . t)
-				 (dot   . t)
-				 (lisp  . t)))
-#+end_src
-
-**** HTML
-
-Configure Htmlize to preferred defaults.
-
-#+begin_src emacs-lisp
-  (use-package htmlize
-    :config (setq htmlize-output-type 'css))
-#+end_src
-
-**** LaTeX
-
-#+begin_src emacs-lisp
-  (require 'ox-latex)
-  (unless (boundp 'org-latex-classes)
-    (setq org-latex-classes nil))
-  (add-to-list 'org-latex-classes
-	       '("abntex2"
-		 "\\documentclass{abntex2}
-		  [NO-DEFAULT-PACKAGES]
-		  [EXTRA]"
-		 ("\\section{%s}" . "\\section*{%s}")
-		 ("\\subsection{%s}" . "\\subsection*{%s}")
-		 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-		 ("\\paragraph{%s}" . "\\paragraph*{%s}")
-		 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
-		 ("\\maketitle" . "\\imprimircapa"))
-	       '("ufvjm"
-		 "\\documentclass[article,12pt,openany,oneside,a4paper,chapter=TITLE,hyphen,english,brazil,sumario=tradicional]{abntex2}
-		  [NO-DEFAULT-PACKAGES]
-		  [EXTRA]"
-		 ("\\section{%s}" . "\\section*{%s}")
-		 ("\\subsection{%s}" . "\\subsection*{%s}")
-		 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-		 ("\\paragraph{%s}" . "\\paragraph*{%s}")
-		 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
-		 ("\\maketitle" . "\\imprimircapa")))
-  (setq org-latex-pdf-process '("latexmk -shell-escape -bibtex -f -pdf %f"))
-#+end_src
-
-**** Reveal.js
-
-Export presentations to Reveal.js.
-
-#+begin_src emacs-lisp
-  (use-package ox-reveal
-    :config (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js@3.8.0/js/reveal.min.js"
-		  org-reveal-root "http://cdn.jsdelivr.net/reveal.js/3.0.0/"
-	org-reveal-mathjax t))
-#+end_src
-
-*** Org Capture and Org Protocol
-
-Org Protocol configures Emacs to deal properly with the Org Capture
-extension for browsers.
-
-Org protocol file location is stored in a sensitive file.
-
-#+begin_src emacs-lisp
-  (require 'org-protocol)
-  (require 'org-capture)
-  (defun sqbrackets->rndbrackets (string)
-    (concat (mapcar #'(lambda (c)
-	  (cond ((equal c ?\[) ?\()
-		((equal c ?\]) ?\))
-		(t c)))
-      string)))
-
-  (load (expand-file-name (concat user-emacs-directory "sensitive/org-protocol.el")))
-
-  (setq org-capture-templates
-    `(("p"
-       "Protocol" entry (file+headline ,org-capture-file "Inbox")
-       ,(concat "* [[%:link][%(sqbrackets->rndbrackets \"%:description\")]]\n"
-		"#+begin_quote\n"
-		"%i\n"
-		"#+end_quote\n\n"
-		"Acesso em: %U\n\n"))
-      ("L" "Protocol Link" entry (file+headline ,org-capture-file "Inbox")
-       ,(concat "* [[%:link][%(sqbrackets->rndbrackets \"%:description\")]]\n"
-		"Acesso em: %U\n\n"))))
-#+end_src
-
-Here is an example of file, which you should store at, say,
-=~/.local/share/applications/org-protocol.desktop=:
-
-#+BEGIN_EXAMPLE
-[Desktop Entry]
-Name=org-protocol
-Exec=emacsclient -c "%u"
-Type=Application
-Terminal=false
-Categories=System;
-MimeType=x-scheme-handler/org-protocol;
-#+END_EXAMPLE
-
-*** Org-ref
-
-Org-ref is the best tool for managing bibliography.
-Bibliography location is stored on a sensitive file.
-
-#+begin_src emacs-lisp
-  (use-package org-ref
-    :config (progn
-              (load (expand-file-name (concat user-emacs-directory "sensitive/org-ref.el"))))
-              (require 'org-ref-pdf)
-              (require 'org-ref-bibtex)
-              (require 'org-ref-url-utils))
-#+end_src
 
 ** Assembly
 
@@ -615,38 +313,18 @@ We also rely on flycheck for Go.
 	      (add-to-list 'company-backends 'company-go)))
 #+end_src
 
-** Haskell
-
-Just make sure we are using intero-mode.
-
-#+begin_src emacs-lisp
-  (use-package intero
-    :config (add-hook 'haskell-mode-hook 'intero-mode))
-#+end_src
-
 ** Lisp
 
 There are many dialects of Lisp! I mostly work with Common Lisp,
 Scheme, Elisp and Racket.
 
 *** Common Lisp
-Here, we use Roswell to manage our SLIME installation.
 
 #+begin_src emacs-lisp
-  (load (expand-file-name "~/.roswell/helper.el"))
-#+end_src
-
-Let's also make sure that we have our function which starts SLIME
-on a specific directory. This is useful for using Qlot.
-
-#+begin_src emacs-lisp
-(defun slime-qlot-exec (directory)
-  (interactive (list (read-directory-name "Project directory: ")))
-  (slime-start :program "qlot"
-               :program-args '("exec" "ros" "-S" "." "run")
-               :directory directory
-               :name 'qlot
-               :env (list (concat "PATH=" (mapconcat 'identity exec-path ":")))))
+(load (expand-file-name "~/quicklisp/slime-helper.el"))
+;;(setq inferior-lisp-program "ccl")
+(setq inferior-lisp-program "sbcl")
+;;(setq inferior-lisp-program "/home/trumae/lisp/ccl/lx86cl64")
 #+end_src
 
 *** Scheme
@@ -679,24 +357,6 @@ Use rainbow-delimiters to colorize parens.
               (add-hook 'scheme-mode-hook     #'rainbow-delimiters-mode)))
 #+end_src
 
-** PureScript
-
-We use the PureScript IDE. Make sure PureScript is properly installed.
-
-#+begin_src emacs-lisp
-  (use-package purescript-mode)
-  (use-package psc-ide
-    :requires purescript-mode
-    :config (progn
-	      (add-hook 'purescript-mode-hook #'psc-ide-mode)
-	      (add-hook 'purescript-mode-hook #'company-mode)
-	      (add-hook 'purescript-mode-hook #'flycheck-mode)
-	      (add-hook 'purescript-mode-hook #'prettify-symbols-mode)
-	      (add-hook 'purescript-mode-hook #'turn-on-purescript-indentation)
-	      (setq psc-ide-use-npm-bin t)))
-
-#+end_src
-
 ** Rust
 
 Make some adjustments to support Rust language. We use rust-mode and
@@ -716,67 +376,6 @@ racer via company for autocompletions.
 			  (add-hook 'racer-mode-hook #'company-mode)))
 	      (define-key rust-mode-map (kbd "TAB") #'company-indent-or-complete-common)
 	      (setq company-tooltip-align-annotations t)))
-#+end_src
-
-** TeX
-
-Use latex-preview-pane for comfortable editing.
-
-#+begin_src emacs-lisp
-  (use-package latex-preview-pane
-    :config
-    (when (display-graphic-p)
-      (latex-preview-pane-enable)))
-#+end_src
-
-To compile the current file, we resort to Rubber, an external tool.
-
-#+begin_src emacs-lisp
-  (defun rubber-compile-file ()
-    (interactive)
-    (shell-command
-     (concat "rubber -d " buffer-file-name))
-    (message "Finished LaTeX compilation."))
-#+end_src
-
-It is also interesting to have pretty symbols for our LaTeX files.
-
-#+begin_src emacs-lisp
-  (use-package latex-pretty-symbols)
-#+end_src
-
-** Web
-
-We use web-mode for anything web-related. It also uses js2-mode for
-easier parens/javascript editing.
-
-#+begin_src emacs-lisp
-  (use-package web-mode
-    :init (progn
-	    (add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
-	    (add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
-	    (add-to-list 'auto-mode-alist '("\\.[agj]sp\\'" . web-mode))
-	    (add-to-list 'auto-mode-alist '("\\.as[cp]x\\'" . web-mode))
-	    (add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
-	    (add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
-	    (add-to-list 'auto-mode-alist '("\\.djhtml\\'" . web-mode))
-	    (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode)))
-    :config (progn
-	      (add-hook 'web-mode-hook
-			(lambda ()
-			  (setq web-mode-enable-auto-closing t)
-			  (setq web-mode-markup-indent-offset 2)
-			  (setq web-mode-css-indent-offset 4)
-			  (setq web-mode-code-indent-offset 4)
-			  (setq web-mode-indent-style 2)
-			  (setq web-mode-ac-sources-alist
-				'(("css"  . (ac-source-css-property))
-				  ("html" . (ac-source-words-in-buffer
-					     ac-source-abbrev))))))
-	      (use-package js2-mode
-		:config (progn
-			  (add-hook 'js2-mode-hook 'flow-minor-enable-automatically)
-			  (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))))))
 #+end_src
 
 * Miscellaneous
@@ -828,48 +427,6 @@ I also like Neotree on the F8 key.
 		    projectile-switch-project-action 'neotree-project-action)))
 #+end_src
 
-** PDF Tools
-
-#+begin_src emacs-lisp
-  (use-package pdf-tools
-    :config (progn (pdf-tools-install)
-		   (add-hook 'pdf-tools-enabled-hook 'pdf-view-midnight-minor-mode)))
-#+end_src
-
-** Mastodon
-
-I like to access Mastodon from Emacs. The link to my instance is stored
-in a sensitive file.
-
-#+begin_src emacs-lisp
-  (use-package mastodon
-    :config (load (expand-file-name (concat user-emacs-directory "sensitive/mastodon.el"))))
-#+end_src
-
-** Slack
-
-Same goes for Slack. (Unfortunately, Slack is defective for now, as it
-relies on an oauth2 package)
-
-#+begin_src emacs-lisp
-  ;;(use-package slack)
-  ;;(use-package alert
-  ;;  :commands (alert)
-  ;;  :init (setq alert-default-style 'notifier))
-#+end_src
-
-** WakaTime
-
-I like to track my time with WakaTime. Gives me useful stats.
-WakaTime uses an API key which is stored on a sensible file.
-
-#+begin_src emacs-lisp
-  (use-package wakatime-mode
-    :config (progn
-              (load (expand-file-name (concat user-emacs-directory "sensitive/wakatime.el")))
-              (global-wakatime-mode)))
-#+end_src
-
 ** nov.el
 
 Nov.el is good for reading EPUB files on Emacs.
@@ -886,57 +443,6 @@ Nov.el is good for reading EPUB files on Emacs.
 	      (setq nov-text-width 80)))
 #+end_src
 
-** Mu4e
-
-Mu4e is my favorite e-mail application. Fortunately, it can be
-installed from my distribution's package manager.
-
-Personal stuff should be in =sensitive/mail.el=.
-
-#+begin_src emacs-lisp
-  (when (eq system-type 'gnu/linux)
-    (add-to-list 'load-path "/usr/share/emacs/site-lisp/mu4e"))
-
-  (require 'mu4e)
-  (require 'smtpmail)
-
-  (use-package mu4e-alert
-    :config (progn
-              (mu4e-alert-set-default-style 'libnotify)
-              (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
-              (add-hook 'after-init-hook #'mu4e-alert-enable-mode-line-display)))
-
-  (setq mail-user-agent                   'mu4e-user-agent
-    message-send-mail-function        'smtpmail-send-it
-    message-kill-buffer-on-exit       t
-    mu4e-change-filenames-when-moving t
-    mu4e-view-show-images             t)
-
-  (when (fboundp 'imagemagick-register-types)
-    (imagemagick-register-types))
-
-  (load (expand-file-name (concat user-emacs-directory "sensitive/mail.el")))
-#+end_src
-
-** Elfeed
-
-Elfeed is an RSS/Atom feed reader. The location of the Elfeed file is
-kept in a sensitive file.
-
-#+begin_src emacs-lisp
-  (load (expand-file-name (concat user-emacs-directory "sensitive/elfeed.el")))
-  (use-package elfeed-org)
-  (use-package elfeed
-    :requires elfeed-org
-    :config (progn
-	      (elfeed-org)
-	      (setq-default elfeed-search-filter "@3-days-ago +unread ")
-	      ;; Move forward and backward
-	      (define-key elfeed-show-mode-map (kbd "C-<right>") 'elfeed-show-next)
-	      (define-key elfeed-show-mode-map (kbd "C-<left>") 'elfeed-show-prev)
-	      (define-key elfeed-show-mode-map (kbd "k") 'elfeed-show-next)
-	      (define-key elfeed-show-mode-map (kbd "j") 'elfeed-show-prev)))
-#+end_src
 
 ** Magit
 
@@ -946,102 +452,52 @@ Magit is the awesome tool for Git usage.
   (use-package magit)
 #+end_src
 
-** Helm-Spotify
+** Symon
 
-Controlling Spotify from Emacs/Dashboard (via dbus) uses a Helm interface.
-
-#+begin_src emacs-lisp
-  (use-package helm-spotify-plus)
-#+end_src
-
-** Dashboard
-
-Dashboard is the default startup page for my Emacs configuration.
+Tiny graphical system monitor
 
 #+begin_src emacs-lisp
-  (use-package hackernews)
-  (use-package dashboard
-    :requires (all-the-icons hackernews)
-    :config (progn
-	      (dashboard-setup-startup-hook)
-	      (setq initial-buffer-choice
-		    (lambda () (get-buffer "*dashboard*")))
-	      (setq dashboard-banner-logo-title "Welcome to GNU Emacs.")
-	      (setq dashboard-startup-banner 'logo)
-	      (setq dashboard-center-content t)
-	      (setq dashboard-items '((bookmarks . 5)
-				      (projects  . 5)
-				      (agenda)))
-	      (setq dashboard-set-heading-icons t)
-	      (setq dashboard-set-file-icons t)
-	      (setq dashboard-set-navigator t)
-	      (setq dashboard-set-init-info t)
-	      (setq dashboard-set-navigator t)
-	      (setq dashboard-navigator-buttons
-		    `((("★" "Blog" "Alchemist's Hideout"
-			(lambda (&rest _)
-			  (browse-url "http://alchemist.sdf.org")))
-		       (,(all-the-icons-octicon "mark-github" :height 1.1 :v-adjust 0.0)
-			"GitHub"
-			"Go to GitHub profile"
-			(lambda (&rest _)
-			  (browse-url "https://github.com/luksamuk")))
-		       (,(all-the-icons-faicon "gitlab" :height 1.1 :v-adjust 0.0)
-			"GitLab"
-			"Go to Gitlab profile"
-			(lambda (&rest _)
-			  (browse-url "https://gitlab.com/luksamuk")))
-		       (,(all-the-icons-faicon "instagram" :height 1.1 :v-adjust 0.0)
-			"Instagram" "Go to Instagram"
-			(lambda (&rest _)
-			  (browse-url "https://instagram.com")))
-		       )
-		      ((,(all-the-icons-faicon "comments" :height 1.1 :v-adjust 0.0)
-			"Lobste.rs" "Open Lobste.rs client"
-			;; (lambda (&rest _)
-			;;   (browse-url "https://lobste.rs"))
-			(lambda (&rest _)
-			  (helm-lobsters)))
-		       (,(all-the-icons-faicon "hacker-news" :height 1.1 :v-adjust 0.0)
-			"Hacker News" "Open Hacker News client"
-			(lambda (&rest _)
-			  (hackernews)))
-		       (,(all-the-icons-faicon "spotify" :height 1.1 :v-adjust 0.0)
-			"Spotify" "Open Spotify client"
-			(lambda (&rest _)
-			  (helm-spotify-plus)))
-		       )
-		      ((,(all-the-icons-faicon "hashtag" :height 1.1 :v-adjust 0.0)
-			"Mastodon" "Open Mastodon client"
-			(lambda (&rest _)
-			  (mastodon)))
-		       (,(all-the-icons-faicon "envelope" :height 1.1 :v-adjust 0.0)
-			"Mail" "Open Mu4e mail client"
-			(lambda (&rest _)
-			  (mu4e)))
-		       (,(all-the-icons-faicon "rss" :height 1.1 :v-adjust 0.0)
-			"RSS" "Open Elfeed RSS client"
-			(lambda (&rest _)
-			  (elfeed)))
-		       (,(all-the-icons-faicon "slack" :height 1.1 :v-adjust 0.0)
-			"Slack" "Open Slack client"
-			(lambda (&rest _)
-			  (slack-start)))
-		       )
-		      ((,(all-the-icons-faicon "external-link" :height 1.1 :v-adjust 0.0)
-			"" "Browse website using w3m"
-			(lambda (&rest _)
-			  (w3m)))
-		       (,(all-the-icons-faicon "refresh" :height 1.1 :v-adjust 0.0)
-			"" "Refresh Dashboard"
-			(lambda (&rest _)
-			  (dashboard-refresh-buffer)))
-		       )))
-	      (setq dashboard-footer-icon
-		    (all-the-icons-octicon "dashboard"
-					   :height 1.1
-					   :v-adjust -0.05
-					   :face 'font-lock-keyword-face))))
-
-
+  ;;(use-package symon)
+  ;;(symon-mode)
 #+end_src
+
+** Ack 
+
+This package brings the full power of ack to emacs by allowing you to run it seamlessly with its large set of options. Ack-like tools such as the silver searcher and git/hg/bzr grep are well supported too.
+
+#+begin_src emacs-lisp
+  (use-package ack)
+#+end_src
+
+** Google Translate
+
+This package allows to translate the strings using Google Translate service directly from GNU Emacs.
+
+#+begin_src emacs-lisp
+   (use-package google-translate)
+   ;;(use-package google-translate-default-ui)
+   (global-set-key "\C-ct" 'google-translate-at-point)
+   (global-set-key "\C-cT" 'google-translate-query-translate)
+#+end_src
+
+** Sublimity
+
+smooth-scrolling, minimap and distraction-free mode (inspired by the sublime editor)
+
+#+begin_src emacs-lisp
+   (use-package sublimity)
+   (sublimity-mode 1)
+#+end_src
+
+
+** Beacon
+
+light that follows your cursor around so you don't lose it! 
+
+#+begin_src emacs-lisp
+   (use-package beacon)
+   (beacon-mode 1)
+   (setq beacon-blink-when-point-moves t)
+#+end_src
+
+
