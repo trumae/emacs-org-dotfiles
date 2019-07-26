@@ -91,7 +91,6 @@ Let's move it out of the way.
 #+end_src
 
 * Appearance
-
 ** Fonts
 
 There are many fonts I usually choose. I just uncomment as needed.
@@ -103,9 +102,9 @@ There are many fonts I usually choose. I just uncomment as needed.
   ;;(defconst my-default-font "FantasqueSansMono Nerd Font-10")
   ;;(defconst my-default-font "Monoid-9")
   ;;(defconst my-default-font "Fixed-10")
-  (defconst my-default-font "Dina-10")
+  ;;(defconst my-default-font "Dina-10")
   ;;(defconst my-default-font "Iosevka-9")
-  ;;(defconst my-default-font "Terminus-10")
+  (defconst my-default-font "Terminus-10")
   ;;(defconst my-default-font "Hack-10")
 #+end_src
 
@@ -143,13 +142,14 @@ There are also some general rules I set up manually.
 	browser-url-browse-function   'browse-url-firefox
 	linum-format                  "%5d"
 	tab-width                     4
-	;; Mouse
-	transentient-mark-mode        t
-	mouse-wheel-follow-mouse      t
-	scroll-step                   1
-	scroll-conservatively         101
-	mouse-wheel-scroll-amount     '(1)
-	mouse-wheel-progressive-speed nil)
+	;;;; Mouse
+	;;transentient-mark-mode        t
+	;;mouse-wheel-follow-mouse      t
+	;;scroll-step                   1
+	;;scroll-conservatively         101
+	;;mouse-wheel-scroll-amount     '(1)
+	;;mouse-wheel-progressive-speed nil
+	)
   (menu-bar-mode -99)
   (tool-bar-mode -1)
 #+end_src
@@ -302,9 +302,9 @@ We also set indentation to tabs of width 4.
 We also rely on flycheck for Go.
 
 #+begin_src emacs-lisp
+  (use-package godoctor)
   (use-package go-mode
     :config (progn
-	      (use-package godoctor)
 	      (add-hook 'go-mode-hook #'company-mode)
 	      (add-hook 'go-mode-hook  #'flycheck-mode)
 	      (add-hook 'go-mode-hook (lambda ()
